@@ -38,7 +38,8 @@ class CatandDog(Dataset):
     def __getitem__(self, idx):
         # 데이터셋에서 특정 1개의 샘플을 가져오는 함수
         img_path = self.img_path[idx]
-        img = Image.open(img_path)
+        
+        img = Image.open(img_path).convert("RGB")
 
         img_transformed = self.transform(img)
 
