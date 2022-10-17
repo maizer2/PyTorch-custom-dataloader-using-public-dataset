@@ -1,4 +1,10 @@
-class CatsvsDogs(Dataset):
+import torch
+
+from typing import Any, Callable, List, Optional, Union, Tuple
+from PIL import Image
+from glob import glob
+
+class CatsvsDogs(torch.utils.data.Dataset):
     def __init__(self, root: str, phase: str = 'train', transform: Optional[Callable] = None):
         # 데이터셋의 전처리를 해주는 부분
         '''
