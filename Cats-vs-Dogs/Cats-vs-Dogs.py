@@ -5,7 +5,7 @@ from PIL import Image
 from glob import glob
 
 class CatsvsDogs(torch.utils.data.Dataset):
-    def __init__(self, root: str, phase: str = 'train', transform: Optional[Callable] = None):
+    def __init__(self, root: str, transform, phase: str = 'train', ):
         # 데이터셋의 전처리를 해주는 부분
         '''
          Cats-vs-Dogs dataset download from https://www.kaggle.com/datasets/shaunthesheep/microsoft-catsvsdogs-dataset
