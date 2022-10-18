@@ -51,4 +51,9 @@ class CatsvsDogs(torch.utils.data.Dataset):
 
         label = img_path.split('/')[-2]
 
+        if label == "Dog":
+            label = 1
+        elif label == "Cat":
+            label = 0
+            
         return img_transformed, label
