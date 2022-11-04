@@ -23,7 +23,7 @@
         │   ├───Item-Pose_f
         │   ├───Model-Parse_f
         │   ├───Model-Pose_f
-    │   │   └───wearing_info.json
+        │   └───wearing_info.json
         └───[Val 원천]2021_Fashion_val_images
             ├───Item-Image
             └───Model-Image_deid
@@ -48,8 +48,8 @@
         │   ├───Item-Parse_f
         │   ├───Item-Pose_f
         │   ├───Model-Parse_f
-    │   │   ├───model-pose_f
-    │   │   └───wearing_info.json
+        │   ├───model-pose_f
+        │   └───wearing_info.json
         └───images
             ├───Item-Image
             └───Model-Image_deid
