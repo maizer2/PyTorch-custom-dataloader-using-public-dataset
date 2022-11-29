@@ -82,24 +82,9 @@ wearing_info_train.json, wearing_info_val.json -> wearing_info.json
 
 ### Return shape
 
-* Tuple[img, label]
-    * img -> List[model_img, item_img]
-        * model_img -> str("images/Model-Image_deid/{model_path_info}.jpg")
-        * item_img -> List[item_F_img, item_B_img]
-            * item_F_img -> str("images/Item-Image/{item}_F.jpg")
-            * item_B_img -> str("images/Item-Image/{item}_B.jpg")
-    * label -> List[model_info, item_info]
-        * model_info-> List[model_parse_info, model_pose_info]
-            * model_parse_info -> List["labels/Model-Parse_f/{model_path_info}.json"]
-            * model_pose_info -> List["labels/Model-Pose_f/{model_path_info}.json"]
-        * item_info -> List[item_name_info, List[item_parse_info, item_pose_info]]
-            * item_name_info -> List[str]
-            * item_parse_info -> List[item_F_parse_info, item_B_parse_info]
-                * item_F_parse_info -> List["labels/Item-Parse_f/{item}_F.json"]
-                * item_B_parse_info -> List["labels/Item-Parse_f/{item}_B.json"]
-            * item_pose_info -> List[item_F_pose_info, item_B_pose_info]
-                * item_F_pose_info -> List["labels/Item-Pose_f/{item}_F.json"]
-                * item_B_pose_info -> List["labels/Item-Pose_f/{item}_B.json"]
+* Tuple[model, item]
+    * model -> List[model_img, model_parse_img, model_pose_img]
+    * item -> List[item_img, item_parse_img, item_pose_img]
 
 ### Link
 
