@@ -1,4 +1,10 @@
-# 패션 상품 및 착용 이미지 tree
+# 패션 상품 및 착용 이미지
+
+
+## DataSet Link
+
+[https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&dataSetSn=78](https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&dataSetSn=78)
+
 
 ## Folder reshape
 
@@ -54,10 +60,6 @@
             ├───Item-Image
             └───Model-Image_deid
 ```
-
-### DataSet Link
-
-[https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&dataSetSn=78](https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&dataSetSn=78)
 
 ### Detail reshape
 
