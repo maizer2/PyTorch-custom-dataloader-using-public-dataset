@@ -2,12 +2,31 @@ import torch
 import torchvision.transforms as transforms
 import json
 
-from typing import Dict, Optional, Callable, List, Tuple
+from typing import Dict, Optional, Callable, List, Union
 from PIL import Image, ImageDraw
 
 # -------------------------------------------------- #
 
+def val_item(item: str) -> str:
+
+    if not (item == "uppor" or item == "pants"):
+        raise ValueError("The input value must be uppor or pants")
+    else:
+        return item
+
+# -------------------------------------------------- #
+
+def val_item_code(item_code: Optional[Union[int, List[int]]] = None) -> List[int]:
+
+    if isinstance(item_code, int):
+        item_code = list(item_code)
+    
+    return item_code
+
+# -------------------------------------------------- #
+
 def val_root(root: str, train: bool) -> str:
+
     if root[-1] != "/":
         root += "/"
 
@@ -18,115 +37,238 @@ def val_root(root: str, train: bool) -> str:
 
     return root 
 
+# --------------------------------------------------- #
+
+def reshape_3_to_1(list: List) -> List:
+
+    reshape_list = []
+    for i in range(len(list)):
+        for j in range(len(list[i])):
+            for k in range(len(list[i][j])):
+
+                reshape_list.append(list[i][j][k])
+    
+    return reshape_list
+
 # -------------------------------------------------- #
 
-def read_json(json_path: str) -> Dict:
+def get_json(json_path: str) -> Dict:
+
     path = open(json_path, 'r')
     return json.load(path)
 
 # --------------------------------------------------- #
 
-def get_item_seg_color(category_id):
-    # Hat                 : 0    Hat_hidden          : 1    
-    # Rsleeve             : 2    Lsleeve             : 3    
-    # Torso               : 4    Top_hidden          : 5    
-    # Hip                 : 6    Pants_Rsleeve       : 7    Pants_Lsleeve       : 8    Pants_hidden         : 9
-    # Skirt               : 10   Skirt_hidden        : 11   
-    # Shoe                : 12   Shoe_hidden         : 13
+def get_item_code(item: Optional[str] = None) -> List:
+    # model seg
+    # 0: hair  1: face  2: neck  3: hat  4: outer_rsleeve  5: outer_lsleeve  6: outer_torso  7: inner_rsleeve
+    # 8: inner_lsleeve  9: inner_torso  10: pants_hip  11: pants_rsleeve  12: pants_lsleeve  13: skirt
+    # 14: right_arm  15: left_arm  16: right_shoe  17: left_shoe  18: right_leg  19: left_leg
 
-    if category_id == 0:
-        return 10
-    elif category_id == 1:
-        return 11
-    elif category_id == 2:
-        return 12
-    elif category_id == 3:
-        return 13
-    elif category_id == 4:
-        return 14
-    elif category_id == 5:
-        return 15
-    elif category_id == 6:
-        return 16
-    elif category_id == 7:
-        return 17
-    elif category_id == 8:
-        return 18
-    elif category_id == 9:
-        return 19
-    elif category_id == 10:
-        return 20
-    elif category_id == 11:
-        return 21
-    elif category_id == 12:
-        return 22
-    elif category_id == 13:
-        return 23
+    if item == "uppor":
+        return [4, 5, 6, 7, 8, 9]
 
-# --------------------------------------------------- #
+    elif item == "pants":
+        return [10, 11, 12, 13]
 
-def get_model_seg_color(category_id):
-    # Hair                : 0    Rsleeve             : 2    Lsleeve             : 3    Hat                 : 3
-    # Torso               : 4    Top_hidden          : 5    Outer_Torse         : 6 
-    # Torso               : 4    Top_hidden          : 5    Outer_Torse         : 6 
-    # Torso               : 4    Top_hidden          : 5    Outer_Torse         : 6 
-    # Torso               : 4    Top_hidden          : 5    Outer_Torse         : 6 
-    # Torso               : 4    Top_hidden          : 5    Outer_Torse         : 6 
+# -------------------------------------------------- #
 
-    if category_id == 0:
-        return 10
-    elif category_id == 1:
-        return 11
-    elif category_id == 2:
-        return 12
-    elif category_id == 3:
-        return 13
-    elif category_id == 4:
-        return 14
-    elif category_id == 5:
-        return 15
-    elif category_id == 6:
-        return 16
-    elif category_id == 7:
-        return 17
-    elif category_id == 8:
-        return 18
-    elif category_id == 9:
-        return 19
-    elif category_id == 10:
-        return 20
-    elif category_id == 11:
-        return 21
-    elif category_id == 12:
-        return 22
-    elif category_id == 13:
-        return 23
-    elif category_id == 14:
-        return 24
-    elif category_id == 15:
-        return 25
-    elif category_id == 16:
-        return 26
-    elif category_id == 17:
-        return 27
-    elif category_id == 18:
-        return 28
-    elif category_id == 19:
-        return 29
+def get_part_point(json_file: Dict, item: str) -> List:
 
-# --------------------------------------------------- #
+    item_codes = val_item_code(get_item_code(item))
 
-def get_seg_point_list(seg_list):
+    part_seg_list = []
+    for item_code in item_codes:
+        for idx in range(1, len(json_file) - 1):
+            if json_file[f"region{idx}"]["category_id"] == item_code:
+                part_seg_list.append(json_file[f"region{idx}"]["segmentation"])
+                break
+            else:
+                continue
 
-    point_list = []
+    return part_seg_list
 
-    for i in range(len(seg_list)):
-        for j in range(len(seg_list[i])):
-            for k in range(len(seg_list[i][j])):
+# -------------------------------------------------- #
 
-                point_list.append(seg_list[i][j][k])
+def get_side_point(point_list: List) -> List:
     
-    return point_list
+    add_value = 10
+
+    low_row = 0
+    low_col = 0
+    high_row = 0
+    high_col = 0
+
+    for point in point_list:
+        if low_row == 0 and low_col == 0 and high_row == 0 and high_col == 0:
+            # print(point)
+            low_row, low_col = point
+            high_row, high_col = point
+
+        else:
+            if point[0] > high_row:
+                # print(f"high_row : {high_row} -> {point[0]}")
+                high_row = point[0]
+
+            elif point[0] < low_row:
+                # print(f"low_row : {high_row} -> {point[0]}")
+                low_row = point[0]
+            
+            if point[1] > high_col:
+                # print(f"high_col : {high_col} -> {point[1]}")
+                high_col = point[1]
+    
+            elif point[1] < low_col:
+                # print(f"low_col : {low_col} -> {point[1]}")
+                low_col = point[1]
+
+    low_row -= add_value
+    low_col -= add_value
+    high_row += add_value
+    high_col += add_value
+
+    box_point = [(int(low_row), int(low_col)), (int(high_row), int(high_col))]
+
+    return box_point
+
+# ------------------------------------------------------------------------------------------------------------
+
+def get_img_crop(image: Image, box_point: List):
+    image = image.copy()
+
+    box = (box_point[0][0], box_point[0][1], box_point[1][0], box_point[1][1])
+    cropped_img = image.crop(box=box)
+
+    return cropped_img
+
+# -------------------------------------------------- #
+
+def draw_rectangle(json_file: Optional[Dict], radius: int = 5):
+
+    model_pose_img = torch.zeros(17, 1280, 720)
+
+    json_file = json_file["landmarks"]
+
+    for idx in range(0, len(json_file), 3):
+
+        if json_file[idx] != 0:
+            pose_img = Image.new("L", (720, 1280), "black")
+            ImageDraw.Draw(pose_img).rectangle(
+                xy=(json_file[idx] - radius, json_file[idx + 1] - radius, json_file[idx] + radius, json_file[idx + 1] + radius), 
+                fill="white", 
+                outline="white"
+                )
+            
+            model_pose_img[idx//3] = transforms.ToTensor()(pose_img)[0]
+    
+    # Tensor( C x H x W ) -> Tensor( H x W x C ) -> Numpy( H x W x C )
+    ## Why changed Tensor to Numpy?
+    ## For code uniformity in __getitem__ 
+    return torch.permute((model_pose_img), (1, 2, 0)).numpy()
+
+# -------------------------------------------------- #
+
+def draw_polygon(draw: ImageDraw.Draw, json_file: Dict, item: Optional[str] = None):
+
+    item_codes = val_item_code(get_item_code(item))
+
+    if item_codes is not None:
+        for item_code in item_codes:
+            for idx in range(1, len(json_file) - 1):
+                if json_file[f"region{idx}"]["category_id"] == item_code:
+                    draw.polygon(reshape_3_to_1(json_file[f"region{idx}"]["segmentation"]), json_file[f"region{idx}"]["category_id"] + 10)
+                    break
+                else:
+                    continue
+
+    elif item_codes is None:
+        for idx in range(1, len(json_file) - 1):
+            draw.polygon(reshape_3_to_1(json_file[f"region{idx}"]["segmentation"]), json_file[f"region{idx}"]["category_id"] + 10)
+
+# -------------------------------------------------- #
+
+def get_model_img(root: str, file_path: str):
+    ####################
+    # Get model image  #
+    # 1. Image.open    #
+    # *. Image splin   #
+    # 2. Transform img #
+    ####################
+
+    model_img = Image.open(root + f"images/Model-Image_deid/{file_path}.jpg").convert("RGB")
+    
+    ###########################################################################################################
+    # Some of the images in the data set have a defect that is (1280, 720) size rather than (720, 1280) size. #
+    # Image spin Using PIL.Image.transpose model                                                              #
+    ###########################################################################################################
+
+    if model_img.size == (1280, 720):
+        model_img = model_img.transpose(Image.Transpose.ROTATE_270)
+
+    return model_img
+
+# -------------------------------------------------- #
+
+def get_model_parse_img(root: str, file_path: str):
+
+    ################################
+    # Get model_parse_img          #
+    # 1. Image.new                 #
+    # 2. get parse info            #
+    # 3. draw polygon on new Image #
+    ################################
+
+    model_parse_img = Image.new("L", (720, 1280), 0)
+    draw = ImageDraw.Draw(model_parse_img)
+
+    model_parse_info = get_json(root + f"labels/Model-Parse_f/{file_path}.json")
+    draw_polygon(draw, model_parse_info)
+    
+    return model_parse_img
+
+# -------------------------------------------------- #
+
+def get_model_pose_img(root: str, file_path: str):
+
+    ##############################
+    # Get model_pose_img         #
+    # 1. Image.new               #
+    # 2. get pose info           #
+    # 3. draw point on new Image #
+    ##############################
+
+    model_pose_info = get_json(root + f"labels/Model-Pose_f/{file_path}.json")
+    model_pose_img = draw_rectangle(model_pose_info)
+
+    return model_pose_img
+
+# -------------------------------------------------- #
+
+def get_model_part_img(root: str, file_path: str, item: str, model_img: Image):
+
+    ###################################
+    # Get model_part_img              #
+    # 상의 기준                        #
+    # 1. item에 맞는 segmentation 얻기 #
+    # 2. 상의 boxpoint찾기             #
+    # 3. boxpoint에 맞게 이미지 자르기 #
+    # 4. 흰 배경 만들기                #   
+    # 5. 흰 배경에 자른 이미지 붙여넣기 #
+    ####################################
+
+    model_parse_info = get_json(root + f"labels/Model-Parse_f/{file_path}.json")
+
+    part_point_list = reshape_3_to_1(get_part_point(model_parse_info, item))
+    
+    part_side_point_list = get_side_point(part_point_list)
+
+    model_part_crop_img = get_img_crop(model_img.copy(), part_side_point_list)
+
+    model_part_img = Image.new("RGB", (720, 1280), "white")
+
+    model_part_img.paste(model_part_crop_img, part_side_point_list[0])
+
+    return model_part_img
 
 # -------------------------------------------------- #
 
@@ -134,6 +276,7 @@ class FP_and_WI(torch.utils.data.Dataset):
     def __init__(
         self, 
         root: str, 
+        item: str = "uppor",
         train: bool = True,
         transform: Optional[Callable] = None
         ):
@@ -141,7 +284,9 @@ class FP_and_WI(torch.utils.data.Dataset):
         # ../FP_and_WI/
         self.root = val_root(root, train)
 
-        self.wearing_info = read_json(self.root + "labels/wearing_info.json")
+        self.wearing_info = get_json(self.root + "labels/wearing_info.json")
+
+        self.item = val_item(item)
 
         if transform is None:
             self.transform = transforms.Compose([
@@ -155,7 +300,7 @@ class FP_and_WI(torch.utils.data.Dataset):
         return len(self.wearing_info)
 
     def __getitem__(self, idx):
-        
+
         #############################################
         # Get cloth information that fits the index #
         #############################################
@@ -169,178 +314,23 @@ class FP_and_WI(torch.utils.data.Dataset):
         ##########################################
 
         model_path_info = wearing_info['wearing'].split('.')[0]
-        item_name_info = list(wearing_info.keys())[1:]
-        item_path_info = list(wearing_info.values())[1:]
-
+        
         ##########################
         #        M O D E L       #
         # 1. Get model_img       #  
         # 2. Get model_parse_img #
         # 3. Get model_pose_img  #
-        # 4. Combine model       #
+        # 3. Get model_part_img  #
         ##########################
 
-        ####################
-        # Get model image  #
-        # 1. Image.open    #
-        # *. Image splin   #
-        # 2. Transform img #
-        ####################
+        model_img = get_model_img(self.root, model_path_info)
+        model_parse_img = get_model_parse_img(self.root, model_path_info)
+        model_pose_img = get_model_pose_img(self.root, model_path_info)
+        model_part_img = get_model_part_img(self.root, model_path_info, self.item, model_img)
 
-        model_img = Image.open(self.root + f"images/Model-Image_deid/{model_path_info}.jpg").convert("RGB")
-        
-        ###########################################################################################################
-        # Some of the images in the data set have a defect that is (1280, 720) size rather than (720, 1280) size. #
-        # Image spin Using PIL.Image.transpose model                                                              #
-        ###########################################################################################################
-
-        if model_img.size == (1280, 720):
-            model_img = model_img.transpose(Image.Transpose.ROTATE_270)
-
-        if self.transform is not None:
-            model_img = self.transform(model_img)
-
-        ################################
-        # Get model_parse_img          #
-        # 1. Image.new                 #
-        # 2. get parse info            #
-        # 3. draw polygon on new Image #
-        ################################
-
-        model_parse_img = Image.new("L", (720, 1280), 0)
-        draw = ImageDraw.Draw(model_parse_img)
-
-        model_parse_info = read_json(self.root + f"labels/Model-Parse_f/{model_path_info}.json")
-        for idx in range(1, len(model_parse_info) - 1):
-            draw.polygon(get_seg_point_list(model_parse_info[f"region{idx}"]["segmentation"]), get_model_seg_color(model_parse_info[f"region{idx}"]["category_id"]))
-        
-        model_parse_img = self.transform(model_parse_img)
-
-        ##############################
-        # Get model_pose_img         #
-        # 1. Image.new               #
-        # 2. get pose info           #
-        # 3. draw point on new Image #
-        ##############################
-
-        model_pose_img = Image.new("L", (720, 1280), 0)
-        draw = ImageDraw.Draw(model_pose_img)
-
-        model_pose_info = read_json(self.root + f"labels/Model-Pose_f/{model_path_info}.json")
-        for idx in range(0, len(model_pose_info['landmarks']), 3):
-            if model_pose_info['landmarks'][idx] != 0:
-                draw.point((model_pose_info['landmarks'][idx], model_pose_info['landmarks'][idx + 1]), 255)
-
-        model_pose_img = self.transform(model_pose_img)
-
-        ############################################################
-        # Get model = [model_img, model_parse_img, model_pose_img] #
-        ############################################################
-
-        model = [model_img, model_parse_img, model_pose_img]
-
-        ##########################
-        #         I T E M        #
-        # 1. Get model_img       #  
-        # 2. Get model_parse_img #
-        # 3. Get model_pose_img  #
-        # 4. Combine model       #
-        ##########################
-
-        ###################################################
-        # Get item image                                  #
-        # Item image is more then one item                #
-        # Item image has F(ront) and B(ehind)             #
-        # 1. Loop using item_path_info each value         #
-        # 2. Image.open                                   #
-        # 3. Transform img                                #
-        # 4. Combine each item to list transform_item_img #
-        ###################################################
-
-        transform_item_F_img, transform_item_B_img = [], []
-
-        for item in item_path_info:
-            if item is not None:
-                item_F_img = Image.open(self.root + f"images/Item-Image/{item}_F.jpg")
-                item_B_img = Image.open(self.root + f"images/Item-Image/{item}_B.jpg")
-                transform_item_F_img.append(self.transform(item_F_img))
-                transform_item_B_img.append(self.transform(item_B_img))
-            else:
-                transform_item_F_img.append(None)
-                transform_item_B_img.append(None)
-
-        item_img = [transform_item_F_img, transform_item_B_img]
-        
-        #############################################################
-        # Get item_info = [item_parse_info, item_pose_info]         #
-        # Using item_path_info but that is more than one value      #
-        # 1. Loop using item_path_info each value                   #
-        # 2. Some value is None, and then reject None data          #
-        # 3. Read each json file and append value to list           #
-        # 4. make image using json file                             #
-        # 5. Combine parse and pose to List                         #
-        #############################################################
-
-        item_F_parse, item_B_parse = [], []
-        item_F_pose, item_B_pose = [], []
-        
-
-        for item in item_path_info:
-            if item != None:
-
-                ######################
-                # Get F, B parse img #
-                ######################
-
-                F_parse_img = Image.new("L", (720, 1280), 0)
-                F_parse_draw = ImageDraw.Draw(F_parse_img)
-
-                F_parse_json = read_json(self.root + f"labels/Item-Parse_f/{item}_F.json")
-                
-                for idx in range(1, len(F_parse_json) - 3):
-                    F_parse_draw.polygon(get_seg_point_list(F_parse_json[f"region{idx}"]["segmentation"]), get_item_seg_color(F_parse_json[f"region{idx}"]["category_id"]))
-
-                item_F_parse.append(self.transform(F_parse_img))
-
-                B_parse_img = Image.new("L", (720, 1280), 0)
-                B_parse_draw = ImageDraw.Draw(B_parse_img)
-
-                B_parse_json = read_json(self.root + f"labels/Item-Parse_f/{item}_B.json")
-                for idx in range(1, len(B_parse_json) - 3):
-                    B_parse_draw.polygon(get_seg_point_list(B_parse_json[f"region{idx}"]["segmentation"]), get_model_seg_color(B_parse_json[f"region{idx}"]["category_id"]))
-
-                item_B_parse.append(self.transform(B_parse_img))
-
-                #####################
-                # Get F, B pose img #
-                #####################
-
-                F_pose_img = Image.new("L", (720, 1280), 0)
-                F_pose_draw = ImageDraw.Draw(F_pose_img)
-
-                F_pose_json = read_json(self.root + f"labels/Item-Pose_f/{item}_F.json")
-                for idx in range(0, len(F_pose_json['landmarks']), 3):
-                    if F_pose_json['landmarks'][idx] != 0:
-                        F_pose_draw.point((F_pose_json['landmarks'][idx], F_pose_json['landmarks'][idx + 1]), 255)
-                item_F_pose.append(self.transform(F_pose_img))
-
-                B_pose_img = Image.new("L", (720, 1280), 0)
-                B_pose_draw = ImageDraw.Draw(B_pose_img)
-
-                B_pose_json = read_json(self.root + f"labels/Item-Pose_f/{item}_B.json")
-                for idx in range(0, len(B_pose_json['landmarks']), 3):
-                    if B_pose_json['landmarks'][idx] != 0:
-                        B_pose_draw.point((B_pose_json['landmarks'][idx], B_pose_json['landmarks'][idx + 1]), 255)
-
-                item_B_pose.append(B_pose_img)
-        
-        item_parse_img = [item_F_parse, item_B_parse]
-        item_pose_img = [item_F_pose, item_B_pose]
-
-        item = [item_img, item_parse_img, item_pose_img]
-
-        return model, item
-
-        # item = [item_img, item_parse, item_pose]
-        # model = [model_img, model_parse, model_pose]
-        # [model, item] -> [[model_img, model_parse, model_pose], [item_img, item_parse, item_pose]] -> [[model_img, model_parse, model_pose], [[_B, _F], [_B, _F], [_B, _F]]]
+        return {
+            "Model" : self.transform(model_img),
+            "Parse" : self.transform(model_parse_img),
+            "Pose" : self.transform(model_pose_img),
+            "Part" : self.transform(model_part_img)
+        }
