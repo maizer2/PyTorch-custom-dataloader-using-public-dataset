@@ -1,5 +1,14 @@
-# 패션 상품 및 착용 이미지
+# **NOTICE**
 
+**This DataSet have file Defects.**
+
+**Using data-tool.py to modify the file.**
+
+## How to use?
+
+python3 data-tool.py --root "../FP_and_WI"
+
+# 패션 상품 및 착용 이미지
 
 ## DataSet Link
 
