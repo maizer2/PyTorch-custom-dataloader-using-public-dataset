@@ -55,6 +55,10 @@
             └───Model-Image_deid
 ```
 
+### DataSet Link
+
+[https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&dataSetSn=78](https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&dataSetSn=78)
+
 ### Detail reshape
 
 [Traing 라벨링]2021_Fashion_train_labels -> labels
@@ -74,18 +78,17 @@ wearing_info_train.json, wearing_info_val.json -> wearing_info.json
 ### Parameter
 
 * root: str = "../FP_and_WI/"
+* item: str = "uppor" or "pants"
 * train: bool = True
     * If train is True, use the "../FP_and_WI/Training/" folder.
     * If train is False, use the "../FP_and_WI/Validation/" folder.
 * transform: Optional[Callable] = None
-    * torchvision.transforms
 
 ### Return shape
 
-* Tuple[model, item]
-    * model -> List[model_img, model_parse_img, model_pose_img]
-    * item -> List[item_img, item_parse_img, item_pose_img]
-
-### Link
-
-[https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&dataSetSn=78](https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&dataSetSn=78)
+* Dictionary {
+            "Model" : self.transform(model_img),
+            "Parse" : self.transform(model_parse_img),
+            "Pose" : self.transform(model_pose_img),
+            "Part" : self.transform(model_part_img)
+        }
