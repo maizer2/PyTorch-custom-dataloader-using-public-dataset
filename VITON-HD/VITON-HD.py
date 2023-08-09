@@ -85,7 +85,7 @@ densepose_labels = [
 ]
 
 
-class VitonHDDataset(Dataset):
+class VITON_HD(Dataset):
     
     def get_rgb_to_8bit_pixel(self, rgb_color):
         r, g, b = rgb_color
@@ -372,6 +372,7 @@ class VitonHDDataset(Dataset):
             
     def __len__(self):
         return len(self.pairs_list)
+
     
     def name(self):
-        return "VitonDataset"
+        return "VITON-HD"
