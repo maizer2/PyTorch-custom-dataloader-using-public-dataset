@@ -235,13 +235,7 @@ class DressCode(Dataset):
         dense_tensor            = self.get_image("dense",       original_name.replace("_0", "_5"), "png",                                 to_tensor=True, resize=True)
         parse_tensor            = self.get_image("parse",       original_name,                     "png",                                 to_tensor=True, resize=True)
         keypoints_tensor        = self.get_image("skeletons",   original_name.replace("_0", "_5"),        convert_mode="L", to_norm=True, to_tensor=True, resize=True)
-        print(original_tensor.shape,
-              clothing_tensor.shape,
-              clothing_mask_tensor.shape,
-              label_map_tensor.shape,
-              dense_tensor.shape,
-              parse_tensor.shape,
-              keypoints_tensor.shape)
+        
         return {"original_name": original_name, "clohting_name": clothing_name,
                 "original_image": original_tensor,
                 "clothing_image": clothing_tensor,
