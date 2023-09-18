@@ -146,15 +146,15 @@ class DressCode(Dataset):
                  img_size: int = 256):
         super().__init__()
         
-        self.data_path: os.path = self.check_data_path(data_path)
-        self.cloth_type: str    = self.check_cloth_type(cloth_type)
-        self.phase: str         = self.check_phase(phase)
-        self.pairs_name: str    = self.get_pairs_name(paired)
-        self.img_size: tuple    = self.get_img_size(img_size)
+        self.data_path:  os.path = self.check_data_path(data_path)
+        self.cloth_type: str     = self.check_cloth_type(cloth_type)
+        self.phase:      str     = self.check_phase(phase)
+        self.pairs_name: str     = self.get_pairs_name(paired)
+        self.img_size:   tuple   = self.get_img_size(img_size)
         
-        self.pairs_list: list   = self.get_pairs_list()
+        self.pairs_list: list    = self.get_pairs_list()
 
-        self.resize: Resize     = Resize(self.img_size, antialias=True)
+        self.resize:     Resize  = Resize(self.img_size, antialias=True)
         
     def convert_path_to_numpy(self, image_path: os.path, convert_mode: str = "RGB") -> np.ndarray:
         image = Image.open(image_path).convert(convert_mode)
@@ -237,13 +237,15 @@ class DressCode(Dataset):
         keypoints_tensor        = self.get_image("skeletons",   original_name.replace("_0", "_5"),        convert_mode="L", to_norm=True, to_tensor=True, resize=True)
         
         return {"original_name": original_name, "clohting_name": clothing_name,
+                
                 "original_image": original_tensor,
                 "clothing_image": clothing_tensor,
                 "clothing_mask": clothing_mask_tensor,
                 "original_label_map": label_map_tensor,
                 "original_dense": dense_tensor,
                 "original_parse": parse_tensor,
-                "original_keypoints": keypoints_tensor}
+                "original_keypoints": keypoints_tensor
+                }
         
     def __len__(self):
         return len(self.pairs_list)
